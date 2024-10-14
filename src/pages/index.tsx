@@ -21,7 +21,6 @@ type ServerSidePropsResponse = {
 
 export default function Home(props: ServerSidePropsResponse) {
   console.log(props);
-
   if (!props.formData) {
     return (
       <div
@@ -41,7 +40,30 @@ export default function Home(props: ServerSidePropsResponse) {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <MultiPageForm
           steps={props.formData}
-          onSubmit={(data: unknown) => console.log(data)}
+          onSubmit={async (data: unknown) => {
+            console.log(data);
+            const formDataResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/registrations/new-registration/fields`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  corporation_id: "f09a4897-3b16-4e47-aa82-3c1d189ab0c1",
+                  country: "US",
+                  state: "CA",
+                  form_data: data,
+                }),
+                headers: {
+                  "Content-Type": "application/json",
+                  // Obviously don't do this in production:
+                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_ORGANIZATION_API_KEY}`,
+                },
+              }
+            );
+
+            if (!formDataResponse.ok) {
+              console.error(await formDataResponse.json());
+            }
+          }}
         />
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
@@ -69,11 +91,11 @@ export async function getServerSideProps(): Promise<{
   props: ServerSidePropsResponse;
 }> {
   const formDataResponse = await fetch(
-    "http://localhost:8001/api/v1/registrations/required-fields?country=US&state=CA",
+    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/registrations/new-registration/fields?country=US&state=CA`,
     {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.BACKEND_ORGANIZATION_API_KEY}`,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ORGANIZATION_API_KEY}`,
       },
     }
   );

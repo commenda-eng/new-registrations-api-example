@@ -2,17 +2,23 @@ import React, { useState } from "react";
 import {
   RegistrationFormStep,
   RegistrationFormField,
-  DependentQuestion,
-  Option,
-  Validation,
+  RegistrationFormSection,
+  FormQuestion,
 } from "../types/formDataTypes";
+import BooleanSelectInput from "./inputs/boolean-select-input";
+import StringInput from "./inputs/string-input";
+import TextAreaInput from "./inputs/textarea-input";
+import DateInput from "./inputs/date-input";
+import SelectInput from "./inputs/select-input";
+import PhoneInput from "./inputs/phone-input";
+import EmailInput from "./inputs/email-input";
+import UrlInput from "./inputs/url-input";
+import NumberInput from "./inputs/number-input";
 
 interface MultiPageFormProps {
   steps: RegistrationFormStep[];
   onSubmit: (values: Record<string, any>) => void;
 }
-
-const inputClassName = "text-gray-900";
 
 const MultiPageForm: React.FC<MultiPageFormProps> = ({ steps, onSubmit }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -24,20 +30,6 @@ const MultiPageForm: React.FC<MultiPageFormProps> = ({ steps, onSubmit }) => {
     setFormValues({ ...formValues, [fieldKey]: value });
   };
 
-  const handleDependentQuestionChange = (
-    fieldKey: string,
-    dependentKey: string,
-    value: any
-  ) => {
-    console.log(fieldKey, dependentKey, value);
-    setFormValues((formValues: Record<string, any>) => {
-      return {
-        ...formValues,
-        [dependentKey]: value,
-      };
-    });
-  };
-
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
@@ -46,110 +38,150 @@ const MultiPageForm: React.FC<MultiPageFormProps> = ({ steps, onSubmit }) => {
     }
   };
 
-  const renderField = (field: RegistrationFormField) => {
+  const renderQuestion = (field: FormQuestion) => {
     return (
-      <div key={field.key} className="flex flex-col max-w-[50%] p-2">
-        <label className="text-md">
-          {field.title}
+      <>
+        <label className="text-sm">
+          {field.question || null}
           {field.required && " *"}
         </label>
-        <p className="text-sm">{field.question}</p>
         {field.type === "boolean" && (
-          <select
-            className={inputClassName}
-            value={formValues[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
-          >
-            <option value="">Select...</option>
-            <option value="True">Yes</option>
-            <option value="False">No</option>
-          </select>
+          <BooleanSelectInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+          />
         )}
-        {field.type === "string" && (
-          <input
-            className={inputClassName}
-            type="text"
-            value={formValues[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
+        {field.type === "text" && (
+          <StringInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+            pattern={field.validations?.regex}
+          />
+        )}
+        {field.type === "url" && (
+          <UrlInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+            pattern={field.validations?.regex}
+          />
+        )}
+        {field.type === "number" && (
+          <NumberInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+          />
+        )}
+        {field.type === "phone" && (
+          <PhoneInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+            pattern={field.validations?.regex}
           />
         )}
         {field.type === "longText" && (
-          <input
-            className={inputClassName}
-            type="textarea"
-            value={formValues[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
+          <TextAreaInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
           />
         )}
         {field.type === "date" && (
-          <input
-            className={inputClassName}
-            type="date"
-            value={formValues[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
-            min={field.validations?.minDate || undefined}
-            max={field.validations?.maxDate || undefined}
+          <DateInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            min={field.validations?.minDate}
+            max={field.validations?.maxDate}
+            pattern={field.validations?.regex}
+            required={field.required}
           />
         )}
-
-        {field.type === "select" && field.options && (
-          <select
-            className={inputClassName}
-            value={formValues[field.key] || ""}
-            onChange={(e) => handleInputChange(field.key, e.target.value)}
-          >
-            <option value="">Select...</option>
-            {field.options.map((option: Option) => (
-              <option key={option.value} value={option.value}>
-                {option.display}
-              </option>
-            ))}
-          </select>
+        {field.type === "email" && (
+          <EmailInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            required={field.required}
+            pattern={field.validations?.regex}
+          />
         )}
+        {field.type === "select" && field.options && (
+          <SelectInput
+            formFieldKey={field.key}
+            value={formValues[field.key]}
+            handleInputChange={handleInputChange}
+            options={field.options}
+            required={field.required}
+          />
+        )}
+      </>
+    );
+  };
+
+  const renderField = (field: RegistrationFormField) => {
+    return (
+      <div key={field.key} className="flex flex-col p-2">
+        {renderQuestion(field)}
         {field.dependentQuestions &&
           Object.entries(field.dependentQuestions).map(
             ([parentQuestionValue, dependentQuestion]) =>
-              formValues[field.key] === parentQuestionValue && (
-                <div key={dependentQuestion.key} className="dependent-question">
-                  <label>
-                    {dependentQuestion.question}
-                    {dependentQuestion.required && " *"}
-                  </label>
-                  <input
-                    type={dependentQuestion.type}
-                    value={formValues[dependentQuestion.key] || ""}
-                    onChange={(e) =>
-                      handleDependentQuestionChange(
-                        field.key,
-                        dependentQuestion.key,
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              )
+              // Render the dependent question if the parent question's value
+              // requires it.
+              formValues[field.key] === parentQuestionValue &&
+              renderQuestion(dependentQuestion)
           )}
       </div>
     );
   };
 
+  const renderSection = (section: RegistrationFormSection) => {
+    return (
+      <div className="flex flex-col max-w-[50%] p-2">
+        <label className="text-md">{section.title}</label>
+        {section.subtitle ? (
+          <label className="text-sm">{section.subtitle}</label>
+        ) : null}
+        <div className="flex flex-col w-full gap-2">
+          {section.fields.map((field) => renderField(field))}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <form
+      className="flex flex-col gap-4 w-full"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleNext();
+      }}
+    >
       <h2 className="text-2xl">{`Step ${currentStepIndex + 1}: ${
-        currentStep.step
+        currentStep.stepTitle
       }`}</h2>
-      {currentStep.fields.map((field) => renderField(field))}
+      {currentStep.sections.map((section) => renderSection(section))}
       <div className="flex w-full justify-between">
         {currentStepIndex > 0 && (
-          <button onClick={() => setCurrentStepIndex(currentStepIndex - 1)}>
+          <button onClick={() => setCurrentStepIndex((i) => i - 1)}>
             Previous
           </button>
         )}
-        <button onClick={handleNext}>
+        <button type="submit">
           {currentStepIndex < steps.length - 1 ? "Next" : "Submit"}
         </button>
       </div>
-    </div>
+    </form>
   );
 };
 

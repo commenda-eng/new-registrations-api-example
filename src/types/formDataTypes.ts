@@ -10,28 +10,30 @@ export interface Validation {
   maxDate?: string;
 }
 
-export interface DependentQuestion {
+export interface FormQuestion {
   key: string;
   question: string;
   type: string;
   options?: Option[];
-  validations?: Validation;
+  previousValue?: string;
   required: boolean;
+  validations?: Validation;
 }
 
-export interface RegistrationFormField {
+export type RegistrationFormField = FormQuestion & {
+  // Questions that must be shown only if some specific parent value is selected,
+  // represented by the key in this mapping:
+  dependentQuestions?: Record<string, FormQuestion>;
+};
+
+export interface RegistrationFormSection {
   key: string;
   title: string;
-  question: string;
-  type: string;
-  options?: Option[];
-  previousValue?: any;
-  required: boolean;
-  validations?: Validation;
-  dependentQuestions?: Record<string, DependentQuestion>;
+  subtitle?: string;
+  fields: RegistrationFormField[];
 }
 
 export interface RegistrationFormStep {
-  step: string;
-  fields: RegistrationFormField[];
+  stepTitle: string;
+  sections: RegistrationFormSection[];
 }
